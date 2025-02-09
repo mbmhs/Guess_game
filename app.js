@@ -1,37 +1,72 @@
-// Generate a random number between 1 and 100
-let secretNumber = Math.floor(Math.random() * 100) + 1;
-let attempts = 0;
+document.addEventListener("DOMContentLoaded", () => {
+    let min = 1, max = 100, attempts = 0, bestScore = localStorage.getItem("bestScore") || "-";
+    let randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+    let timerInterval, timeElapsed = 0;
+    let timerStarted = false;
 
-// Function to check the player's guess
-function checkGuess() {
-    // Get the player's guess from the input field
-    let playerGuess = parseInt(document.getElementById("guessInput").value);
-    let feedbackElement = document.getElementById("feedback");
-    let attemptsElement = document.getElementById("attempts");
-    
-    attempts++;  // Increment attempts
+    document.getElementById("bestScore").innerText = bestScore;
 
-    // Check if the guess is valid
-    if (isNaN(playerGuess) || playerGuess < 1 || playerGuess > 100) {
-        feedbackElement.textContent = "Please enter a number between 1 and 100.";
-        feedbackElement.style.color = "red";
-    } else {
-        // Check if the guess is correct
-        if (playerGuess === secretNumber) {
-            feedbackElement.textContent = "Congratulations! You guessed the number!";
-            feedbackElement.style.color = "green";
-        } else if (playerGuess < secretNumber) {
-            feedbackElement.textContent = "Too low! Try again.";
-            feedbackElement.style.color = "orange";
-        } else {
-            feedbackElement.textContent = "Too high! Try again.";
-            feedbackElement.style.color = "orange";
+    document.getElementById("difficulty").addEventListener("change", function() {
+        const difficulty = this.value;
+        if (difficulty === "easy") { min = 1; max = 50; }
+        else if (difficulty === "hard") { min = 1; max = 200; }
+        else { min = 1; max = 100; }
+        document.getElementById("range").innerText = `${min}-${max}`;
+        resetGame();
+    });
+
+    document.getElementById("checkGuess").addEventListener("click", () => {
+        if (!timerStarted) {
+            startTimer();
+            timerStarted = true;
         }
+
+        const userGuess = parseInt(document.getElementById("guessInput").value);
+        const message = document.getElementById("message");
+        if (isNaN(userGuess) || userGuess < min || userGuess > max) {
+            message.innerText = `Enter a valid number between ${min} and ${max}`;
+            message.style.color = "red";
+            return;
+        }
+        attempts++;
+        document.getElementById("score").innerText = `Attempts: ${attempts} | Best Score: ${bestScore} | Time: ${timeElapsed}s`;
+        
+        if (userGuess === randomNumber) {
+            message.innerText = "Correct! You win!";
+            message.style.color = "green";
+            clearInterval(timerInterval);
+            if (bestScore === "-" || attempts < bestScore) {
+                bestScore = attempts;
+                localStorage.setItem("bestScore", bestScore);
+                document.getElementById("bestScore").innerText = bestScore;
+            }
+        } else {
+            message.innerText = userGuess > randomNumber ? "Too high!" : "Too low!";
+            message.style.color = userGuess > randomNumber ? "orange" : "blue";
+        }
+    });
+
+    document.getElementById("resetGame").addEventListener("click", resetGame);
+
+    function resetGame() {
+        attempts = 0;
+        timeElapsed = 0;
+        clearInterval(timerInterval);
+        timerStarted = false;
+        document.getElementById("score").innerText = `Attempts: 0 | Best Score: ${bestScore} | Time: 0s`;
+        document.getElementById("message").innerText = "";
+        document.getElementById("guessInput").value = "";
+        randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    // Update attempts count
-    attemptsElement.textContent = attempts;
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            timeElapsed++;
+            document.getElementById("score").innerText = `Attempts: ${attempts} | Best Score: ${bestScore} | Time: ${timeElapsed}s`;
+        }, 1000);
+    }
 
-    // Clear the input field after each guess
-    document.getElementById("guessInput").value = "";
-}
+    document.getElementById("toggleTheme").addEventListener("click", () => {
+        document.body.classList.toggle("dark-mode");
+    });
+});
